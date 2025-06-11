@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { apiResponse } from "../utils/apiResponse.js" 
 
+
 import jwt from "jsonwebtoken"
 
 
@@ -181,11 +182,12 @@ const logoutUser = asyncHandler(async(req, res) => {
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged Out"))
+    .json(new apiResponse(200, {}, "User logged Out"))
 }) 
  const  refreshAccessToken =  asyncHandler(async(req ,res)=>{
 // refresh token ko access krne k liye cookies to verify ki say user hi hai 
- const incomingRefreshToken = req.cookie.refreshAccessToken || req.body  // req.body for mobile user 
+ //const incomingRefreshToken = req.cookies.refreshAccessToken || req.body 
+ const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken; // req.body for mobile user 
  if(!incomingRefreshToken){
     throw new apiError(401 ,"unauthroized request")
  }
@@ -227,9 +229,9 @@ const logoutUser = asyncHandler(async(req, res) => {
     // user s aayega 
 
     const user = await User.findById(req.user?._id) 
-    const isPasswordCorrect =  isPasswordCorrect(oldPassword) 
+    const isPasswordCorrectCheck = await  user.isPasswordCorrect(oldPassword) 
 
-    if(!isPasswordCorrect) {
+    if(!isPasswordCorrectCheck) {
         throw new apiError(
             400 ,  " u have forgot your password "
         )
@@ -249,13 +251,13 @@ const logoutUser = asyncHandler(async(req, res) => {
 const currentUser = asyncHandler(async(req , res)=>{
      return res 
      .status (200)
-     .json(200 , req.user , "cuuretnuser is fetched") 
+     .json(new apiResponse (200 , req.user , "cuuretnuser is fetched")) 
 })
  const updateAccountDetails = asyncHandler(async(req, res) => {
     const {fullName, email} = req.body
 
     if (!fullName || !email) {
-        throw new ApiError(400, "All fields are required")
+        throw new apiError(400, "All fields are required")
     }
 
     const user = await User.findByIdAndUpdate(
@@ -272,7 +274,7 @@ const currentUser = asyncHandler(async(req , res)=>{
 
     return res
     .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"))
+    .json(new apiResponse(200, user, "Account details updated successfully"))
 });
 
 const updateAvatar = asyncHandler(async(req ,res)=>{
@@ -297,7 +299,7 @@ const updateAvatar = asyncHandler(async(req ,res)=>{
 
      return res
     .status(200)
-    .json(new ApiResponse(200, user, "avatar updated successfully"))
+    .json(new apiResponse(200, user, "avatar updated successfully"))
 })
 
 const updatecoverImage= asyncHandler(async(req ,res)=>{
@@ -322,7 +324,7 @@ const updatecoverImage= asyncHandler(async(req ,res)=>{
 
      return res
     .status(200)
-    .json(new ApiResponse(200, user, "CoverImage updated successfully")) 
+    .json(new apiResponse(200, user, "CoverImage updated successfully")) 
 
 
 
@@ -361,7 +363,7 @@ const getUserChannelProfile = asyncHandler(async(req , res)=>{
                 from : "subscriptions" ,
                 localField : "_id" ,
                 foreignField: "subscriber",
-                as: " subscriberdTo" // a partiicular id  kitno ko subcribe kiye h 
+                as: " subscriberTo" // a partiicular id  kitno ko subcribe kiye h 
                       }  
               },
         
@@ -370,11 +372,10 @@ const getUserChannelProfile = asyncHandler(async(req , res)=>{
         {
              $addFields: {
                 subscribersCount: {
-                    $size: "$subscribers" // count 
+                     $size: { $ifNull: ["$subscribers", []] } 
                 },
                 channelsSubscribedToCount: {
-                    $size: "$subscribedTo" // $size = count 
-                },
+                    $size: { $ifNull: ["$subscriberTo", []] } },
                 isSubscribed: {
                     $cond: {
                         if: {$in: [req.user?._id, "$subscribers.subscriber"]},
@@ -403,13 +404,13 @@ const getUserChannelProfile = asyncHandler(async(req , res)=>{
     ])
 
     if (!channel?.length) {
-        throw new ApiError(404, "channel does not exists")
+        throw new apiError(404, "channel does not exists")
     }
 
     return res
     .status(200)
     .json(
-        new ApiResponse(200, channel[0], "User channel infoo fetched successfully")
+        new apiResponse(200, channel[0], "User channel infoo fetched successfully")
     )
 })
 
@@ -464,7 +465,7 @@ const getWatchHistory = asyncHandler(async (req , res )=> {
     return res
     .status(200)
     .json(
-        new ApiResponse(
+        new apiResponse(
             200,
             user[0].watchHistory,
             "Watch history fetched successfully"
@@ -491,7 +492,9 @@ export {registerUser,
           updateAvatar ,  
           updatecoverImage , 
       getUserChannelProfile ,
-           getWatchHistory 
+           getWatchHistory ,
+ changeCurrentPassword ,
+
 
 
 
