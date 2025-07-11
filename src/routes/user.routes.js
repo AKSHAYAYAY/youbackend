@@ -1,46 +1,57 @@
-import { Router } from "express"; 
-import { registerUser ,
-     loginUser ,
-      logoutUser,
-       refreshAccessToken,
-        currentUser,
-         updateAccountDetails,
-          updatecoverImage,
-           updateAvatar,
-            getUserChannelProfile,
-             getWatchHistory  , 
-             changeCurrentPassword ,
-            } from "../controllers/user.controller.js";
-import {upload} from "../middlewares/multer.middleware.js"
+import { Router } from "express";
+import { 
+    changePassword, 
+    getCurrentUser, 
+    getUserChannelProfile, 
+    getWatchHistory, 
+    loginUser, 
+    logoutUser, 
+    refreshAccessToken, 
+    registerUser, 
+    updateUserProfile, 
+    updateUserAvatar, 
+    updateUserCoverImage,
+    clearWatchHistory 
+} from "../controllers/user.controller.js";
+import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { checkUser } from "../middlewares/openRouteAuth.middleware.js"
+import { get } from "mongoose";
 
-const router = Router()
+const router = Router();
 
 router.route("/register").post(
-    upload.fields([        // middleware multer 
-        {
-            name: "avatar",
-            maxCount: 1
-        }, 
-        {
-            name: "coverImage",
-            maxCount: 1
-        }
-    ]),
-    registerUser
-    )
-router.route("/login").post(loginUser) 
-router.route("/logout").post(verifyJWT,  logoutUser)
-router.route("/refreshtoken").post(refreshAccessToken) 
-router.route("/currentUser").get( verifyJWT , currentUser)
-router.route("/updateDetails").post(verifyJWT , updateAccountDetails)
-router.route("/update-avatar").patch(verifyJWT , upload.single("avatar") , updateAvatar  )
-router.route("/cover-image").patch(verifyJWT , upload.single("coverImage") , updatecoverImage)
-router.route("/c/:username").get(verifyJWT , getUserChannelProfile)  // taking from params //
-router.route("/history").get(verifyJWT , getWatchHistory)
-router.route("/changePassword").post(verifyJWT, changeCurrentPassword)
+  upload.fields([
+    {
+      name: "avatar",
+      maxCount: 1,
+    },
+    {
+      name: "coverImage",
+      maxCount: 1,
+    },
+  ]),
+  registerUser
+);
+router.route("/login").post(loginUser);
+//secured routes
+router.route("/logout").post(verifyJWT, logoutUser);
+router.route("/refresh-token").post(refreshAccessToken);
 
-export default router
+router.route("/change-password").patch(verifyJWT, changePassword);
+router.route("/update-profile").patch(verifyJWT, updateUserProfile);
+router
+  .route("/avatar")
+  .patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
+router
+  .route("/cover-image")
+  .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
 
+router.route("/get-current-user").get(verifyJWT, getCurrentUser);
+router.route("/c/:username").get(checkUser, getUserChannelProfile);
+router
+  .route("/history")
+  .get(verifyJWT, getWatchHistory)
+  .delete(verifyJWT, clearWatchHistory);
 
+export default router;
