@@ -1,10 +1,10 @@
-import { apiResponse } from "../utils/apiResponse.js";
-import { apiError } from "../utils/apiError.js";
 import mongoose, { isValidObjectId } from "mongoose";
-import { Like } from "../models/like.model.js";
-import { Video } from "../models/video.model.js";
 import { Comment } from "../models/comment.model.js";
+import { Like } from "../models/like.model.js";
 import { Tweet } from "../models/tweet.model.js";
+import { Video } from "../models/video.model.js";
+import { apiError } from "../utils/apiError.js";
+import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // TODO: Review and Enhance all controllers
@@ -118,12 +118,16 @@ const toggleLike = asyncHandler(async (req, res) => {
   let isDisLiked = false;
 
   if (userLike?.length > 0) {
+    // entry is present so toggle status
     if (userLike[0].liked) {
+      // like is present
       if (reqLike) {
+        // toggle like so delete like
         await Like.findByIdAndDelete(userLike[0]._id);
         isLiked = false;
         isDisLiked = false;
       } else {
+        // toggle dis-like so make it dislike
         userLike[0].liked = false;
         let res = await userLike[0].save();
         if (!res) throw new apiError(500, "error while updating like");
@@ -131,19 +135,23 @@ const toggleLike = asyncHandler(async (req, res) => {
         isDisLiked = true;
       }
     } else {
+      // dis-like is present
       if (reqLike) {
+        // toggle like so make it like
         userLike[0].liked = true;
         let res = await userLike[0].save();
         if (!res) throw new apiError(500, "error while updating like");
         isLiked = true;
         isDisLiked = false;
       } else {
+        // toggle dis-like so delete dis-like
         await Like.findByIdAndDelete(userLike[0]._id);
         isLiked = false;
         isDisLiked = false;
       }
     }
   } else {
+    // entry is not present so create new
     let like;
     if (commentId) {
       like = await Like.create({
@@ -200,6 +208,7 @@ const toggleLike = asyncHandler(async (req, res) => {
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  const { toggleLike } = req.query;
 
   if (!isValidObjectId(videoId)) {
     throw new apiError(400, "invalid videoId");
@@ -211,7 +220,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
   let isLiked = await Like.find({ video: videoId, likedBy: req.user?._id });
 
   if (isLiked && isLiked.length > 0) {
-    await Like.findByIdAndDelete(isLiked[0]._id);
+    const like = await Like.findByIdAndDelete(isLiked[0]._id);
     isLiked = false;
   } else {
     const like = await Like.create({ video: videoId, likedBy: req.user?._id });
@@ -255,12 +264,16 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   let isDisLiked = false;
 
   if (userLike?.length > 0) {
+    // entry is present so toggle status
     if (userLike[0].liked) {
+      // like is present
       if (reqLike) {
+        // toggle like so delete like
         await Like.findByIdAndDelete(userLike[0]._id);
         isLiked = false;
         isDisLiked = false;
       } else {
+        // toggle dis-like so make it dislike
         userLike[0].liked = false;
         let res = await userLike[0].save();
         if (!res) throw new apiError(500, "error while updating like");
@@ -268,19 +281,23 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
         isDisLiked = true;
       }
     } else {
+      // dis-like is present
       if (reqLike) {
+        // toggle like so make it like
         userLike[0].liked = true;
         let res = await userLike[0].save();
         if (!res) throw new apiError(500, "error while updating like");
         isLiked = true;
         isDisLiked = false;
       } else {
+        // toggle dis-like so delete dis-like
         await Like.findByIdAndDelete(userLike[0]._id);
         isLiked = false;
         isDisLiked = false;
       }
     }
   } else {
+    // entry is not present so create new
     const like = await Like.create({
       comment: commentId,
       likedBy: req.user?._id,
@@ -310,6 +327,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
+  const { toggleLike } = req.query;
 
   if (!isValidObjectId(tweetId)) throw new apiError(400, "invalid tweetId");
   const tweet = await Tweet.findById(tweetId);
@@ -340,9 +358,6 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 });
 
 export {
-  toggleCommentLike,
-  toggleTweetLike,
-  toggleVideoLike,
-  getLikedVideos,
-  toggleLike,
+  getLikedVideos, toggleCommentLike, toggleLike, toggleTweetLike,
+  toggleVideoLike
 };

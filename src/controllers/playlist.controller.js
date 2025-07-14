@@ -33,7 +33,16 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     throw new apiError(400, "Invalid user id");
   }
 
-  const playlists = await Playlist.find({ owner: userId });
+  const playlists = await Playlist.find({ owner: userId })
+  .populate({
+      path: "videos",
+      select: "title thumbnail duration owner",
+      populate: {
+        path: "owner",
+        select: "fullName username avatar",
+      },
+    })
+    .populate("owner", "fullName username avatar");
 
   if (!playlists) {
     throw new apiError(404, "No playlists found");
@@ -51,10 +60,21 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     throw new apiError(400, "Invalid playlist id");
   }
 
-  const playlist = await Playlist.findById(playlistId);
+  const playlist = await Playlist.findById(playlistId) 
+  .populate({
+      path: "videos",
+      select: "title thumbnail duration owner",
+      populate: {
+        path: "owner",
+        select: "fullName username avatar",
+      },
+    })
+    .populate("owner", "fullName username avatar");
+
 
   if (!playlist) {
     throw new apiError(404, "No playlist found");
+
   }
 
   return res
@@ -62,7 +82,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, playlist, "Playlist fetched successfully"));
 });
 
-const addVideoToPlaylist = asyncHandler(async (req, res) => {
+/*const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params;
 
   if (!isValidObjectId(playlistId)) {
@@ -94,7 +114,46 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
       "Video added to playlist successfully"
     )
   );
+});*/
+const addVideoToPlaylist = asyncHandler(async (req, res) => {
+  const { playlistId, videoId } = req.params;
+
+  if (!isValidObjectId(playlistId)) {
+    throw new apiError(400, "Invalid playlistId");
+  }
+
+  if (!isValidObjectId(videoId)) {
+    throw new apiError(400, "Invalid videoId");
+  }
+
+  const playlist = await Playlist.findByIdAndUpdate(
+    playlistId,
+    {
+      $addToSet: {
+        videos: videoId,
+      },
+    },
+    {
+      new: true,
+    }
+  )
+    .populate({
+      path: "videos",
+       select: "title thumbnail duration owner",
+      populate: {
+        path: "owner", // also populate owner of each video if needed
+        select: "fullName username avatar",
+      },
+    })
+    .populate("owner", "fullName username avatar");
+
+  if (!playlist) {
+    throw new apiError(404, "Playlist not found");
+  }
+
+  res.status(200).json(playlist);
 });
+
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params;

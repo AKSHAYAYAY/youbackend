@@ -142,7 +142,7 @@ export const getAllVideosByOption = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(
+      new apiResponse(
         200,
         { videos: docs, pagingInfo },
         "All Query Videos Sent Successfully"
@@ -209,7 +209,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, allVideos, "all videos sent"));
+    .json(new apiResponse(200, allVideos, "all videos sent"));
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -261,7 +261,7 @@ try {
 
   if (req.customConnectionClosed) return await cleanUpAndAbort(videoFile.url, thumbnailFile.url, video._id);
 
-  return res.status(200).json(new ApiResponse(200, video, "Video published successfully"));
+  return res.status(200).json(new apiResponse(200, video, "Video published successfully"));
 
 } catch (error) {
   console.error("Error in publishAVideo controller:", error);
@@ -423,7 +423,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video[0], "Video sent successfully"));
+    .json(new apiResponse(200, video[0], "Video sent successfully"));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
@@ -478,7 +478,7 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(new ApiResponse(200, video, "Video updated successfully"));
+      .json(new apiResponse(200, video, "Video updated successfully"));
   } catch (error) {
     console.error("Error in updating video:", error);
     throw new ApiError(500, error.message, "Interal server error");
@@ -521,7 +521,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(new ApiResponse(200,  "Video deleted successfully"));
+      .json(new apiResponse(200,  "Video deleted successfully"));
   } catch (error) {
     console.error("Error in deleting video:", error);
     throw new ApiError(500, error.message, "Internal server error");
@@ -552,7 +552,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, video, "Video published status updated successfully")
+      new apiResponse(200, video, "Video published status updated successfully")
     );
 });
 
@@ -585,7 +585,7 @@ const updateView = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(
+      new apiResponse(
         200,
         { isSuccess: true, views: updatedVideo.views, watchHistory },
         "Video views updated successfully"
